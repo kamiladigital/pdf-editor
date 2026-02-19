@@ -269,6 +269,7 @@ export default function App() {
                 onCanvasClick={handleCanvasClick}
                 onMoveOverlay={handleMoveOverlay}
                 onDeleteOverlay={handleDeleteOverlay}
+                onUpdateOverlay={handleUpdateOverlay}
                 activeTool={activeTool}
                 password={pdfPassword}
               />

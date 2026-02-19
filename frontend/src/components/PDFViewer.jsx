@@ -17,6 +17,7 @@ export default function PDFViewer({
   onCanvasClick,
   onMoveOverlay,
   onDeleteOverlay,
+  onUpdateOverlay,
   activeTool,
   password,
 }) {
@@ -190,6 +191,7 @@ export default function PDFViewer({
                 onDelete={() => onDeleteOverlay(overlay.id)}
                 containerWidth={canvasDims.width}
                 containerHeight={canvasDims.height}
+                onUpdateOverlay={onUpdateOverlay}
               />
             ))}
           </div>
@@ -206,11 +208,29 @@ function OverlayElement({
   onDelete,
   containerWidth,
   containerHeight,
+  onUpdateOverlay,
 }) {
   const style = {
     left: `${overlay.x}%`,
     top: `${overlay.y}%`,
   };
+
+  const [editing, setEditing] = React.useState(false);
+  const [editValue, setEditValue] = React.useState(overlay.text);
+  const inputRef = React.useRef(null);
+
+  React.useEffect(() => {
+    if (isSelected && overlay.type === "text") {
+      setEditValue(overlay.text);
+    }
+  }, [isSelected, overlay.text, overlay.type]);
+
+  React.useEffect(() => {
+    if (editing && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [editing]);
 
   if (overlay.type === "text") {
     return (
@@ -222,12 +242,44 @@ function OverlayElement({
           color: overlay.color || "#000000",
         }}
         onMouseDown={onMouseDown}
-        onClick={(e) => e.stopPropagation()}
+        onClick={(e) => {
+          e.stopPropagation();
+          if (isSelected) setEditing(true);
+        }}
       >
         <button className="delete-btn" onClick={onDelete}>
           ×
         </button>
-        {overlay.text}
+        {isSelected && editing ? (
+          <input
+            ref={inputRef}
+            type="text"
+            value={editValue}
+            style={{
+              fontSize: `${overlay.fontSize}px`,
+              color: overlay.color || "#000000",
+              minWidth: 40,
+              maxWidth: 200,
+            }}
+            onChange={e => setEditValue(e.target.value)}
+            onBlur={() => {
+              setEditing(false);
+              if (editValue !== overlay.text && onUpdateOverlay) {
+                onUpdateOverlay(overlay.id, { text: editValue });
+              }
+            }}
+            onKeyDown={e => {
+              if (e.key === "Enter") {
+                inputRef.current.blur();
+              } else if (e.key === "Escape") {
+                setEditValue(overlay.text);
+                setEditing(false);
+              }
+            }}
+          />
+        ) : (
+          <span>{overlay.text}</span>
+        )}
       </div>
     );
   }
