@@ -103,23 +103,42 @@ export default function Sidebar({
             </>
           )}
           {selected.type === "image" && (
-            <div className="form-group">
-              <label>Width (%)</label>
-              <input
-                type="range"
-                min={5}
-                max={80}
-                value={selected.width}
-                onChange={(e) =>
-                  onUpdateOverlay(selected.id, {
-                    width: parseInt(e.target.value),
-                  })
-                }
-              />
-              <span style={{ fontSize: 12, color: "#888" }}>
-                {selected.width}%
-              </span>
-            </div>
+            <>
+              <div className="form-group">
+                <label>Width (%)</label>
+                <input
+                  type="range"
+                  min={5}
+                  max={80}
+                  value={selected.width}
+                  onChange={(e) =>
+                    onUpdateOverlay(selected.id, {
+                      width: parseInt(e.target.value),
+                    })
+                  }
+                />
+                <span style={{ fontSize: 12, color: "#888" }}>
+                  {selected.width}%
+                </span>
+              </div>
+              <div className="form-group">
+                <label>Height (%)</label>
+                <input
+                  type="range"
+                  min={5}
+                  max={80}
+                  value={selected.height}
+                  onChange={(e) =>
+                    onUpdateOverlay(selected.id, {
+                      height: parseInt(e.target.value),
+                    })
+                  }
+                />
+                <span style={{ fontSize: 12, color: "#888" }}>
+                  {selected.height}%
+                </span>
+              </div>
+            </>
           )}
           <button
             className="btn btn-danger btn-sm"

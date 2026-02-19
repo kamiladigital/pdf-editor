@@ -2,12 +2,11 @@ import React, { useState, useCallback } from "react";
 import PDFUploader from "./components/PDFUploader";
 import PDFViewer from "./components/PDFViewer";
 import Sidebar from "./components/Sidebar";
-
-const API_BASE = "/api";
+import { generatePDF } from "./pdfGenerator";
 
 export default function App() {
-  const [pdfId, setPdfId] = useState(null);
   const [pdfFile, setPdfFile] = useState(null);
+  const [pdfBytes, setPdfBytes] = useState(null); // raw ArrayBuffer
   const [pdfInfo, setPdfInfo] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [overlays, setOverlays] = useState([]);
@@ -18,34 +17,37 @@ export default function App() {
   const [processing, setProcessing] = useState(false);
 
   const handleUpload = useCallback(async (file) => {
-    setStatus({ type: "info", message: "Uploading PDF..." });
-    const formData = new FormData();
-    formData.append("pdf", file);
+    setStatus({ type: "info", message: "Loading PDF..." });
 
     try {
-      const res = await fetch(`${API_BASE}/upload`, {
-        method: "POST",
-        body: formData,
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Upload failed");
+      const arrayBuffer = await file.arrayBuffer();
 
-      setPdfId(data.id);
+      // Use pdf-lib to get page count/dims
+      const { PDFDocument } = await import("pdf-lib");
+      const doc = await PDFDocument.load(arrayBuffer);
+      const pages = doc.getPages();
+
+      const info = {
+        pages: pages.length,
+        pageWidths: pages.map((p) => p.getSize().width),
+        pageHeights: pages.map((p) => p.getSize().height),
+      };
+
       setPdfFile(file);
+      setPdfBytes(arrayBuffer);
+      setPdfInfo(info);
       setCurrentPage(1);
       setOverlays([]);
       setSelectedOverlay(null);
       setDownloadUrl(null);
       setActiveTool(null);
 
-      // Get PDF info
-      const infoRes = await fetch(`${API_BASE}/pdf-info/${data.id}`);
-      const info = await infoRes.json();
-      setPdfInfo(info);
-
-      setStatus({ type: "success", message: `Uploaded: ${data.filename} (${data.pages} pages)` });
+      setStatus({
+        type: "success",
+        message: `Loaded: ${file.name} (${pages.length} page${pages.length > 1 ? "s" : ""})`,
+      });
     } catch (err) {
-      setStatus({ type: "error", message: err.message });
+      setStatus({ type: "error", message: `Failed to load PDF: ${err.message}` });
     }
   }, []);
 
@@ -113,58 +115,37 @@ export default function App() {
   }, []);
 
   const handleProcess = useCallback(async () => {
-    if (!pdfId || overlays.length === 0) {
-      setStatus({ type: "error", message: "Add some text or signatures before processing" });
+    if (!pdfBytes || overlays.length === 0) {
+      setStatus({ type: "error", message: "Add some text or images before generating" });
       return;
     }
 
     setProcessing(true);
-    setStatus({ type: "info", message: "Processing PDF..." });
-    setDownloadUrl(null);
+    setStatus({ type: "info", message: "Generating PDF..." });
 
-    const texts = overlays
-      .filter((o) => o.type === "text")
-      .map((o) => ({
-        text: o.text,
-        x: o.x,
-        y: o.y,
-        page: o.page,
-        fontSize: o.fontSize,
-        color: o.color,
-      }));
-
-    const images = overlays
-      .filter((o) => o.type === "image")
-      .map((o) => ({
-        imageData: o.imageData,
-        x: o.x,
-        y: o.y,
-        width: o.width,
-        height: o.height,
-        page: o.page,
-      }));
+    // Revoke previous download URL
+    if (downloadUrl) {
+      URL.revokeObjectURL(downloadUrl);
+      setDownloadUrl(null);
+    }
 
     try {
-      const res = await fetch(`${API_BASE}/process`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: pdfId, texts, images }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Processing failed");
-
-      setDownloadUrl(`${API_BASE}/download/${data.id}`);
-      setStatus({ type: "success", message: "PDF processed successfully!" });
+      const resultBytes = await generatePDF(pdfBytes, overlays);
+      const blob = new Blob([resultBytes], { type: "application/pdf" });
+      const url = URL.createObjectURL(blob);
+      setDownloadUrl(url);
+      setStatus({ type: "success", message: "PDF generated successfully!" });
     } catch (err) {
-      setStatus({ type: "error", message: err.message });
+      setStatus({ type: "error", message: `Generation failed: ${err.message}` });
     } finally {
       setProcessing(false);
     }
-  }, [pdfId, overlays]);
+  }, [pdfBytes, overlays, downloadUrl]);
 
   const handleReset = useCallback(() => {
-    setPdfId(null);
+    if (downloadUrl) URL.revokeObjectURL(downloadUrl);
     setPdfFile(null);
+    setPdfBytes(null);
     setPdfInfo(null);
     setCurrentPage(1);
     setOverlays([]);
@@ -173,7 +154,7 @@ export default function App() {
     setStatus(null);
     setDownloadUrl(null);
     setProcessing(false);
-  }, []);
+  }, [downloadUrl]);
 
   return (
     <div className="app">

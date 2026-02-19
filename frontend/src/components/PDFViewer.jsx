@@ -230,6 +230,7 @@ function OverlayElement({
 
   if (overlay.type === "image") {
     const widthPx = (overlay.width / 100) * containerWidth;
+    const heightPx = (overlay.height / 100) * containerHeight;
     return (
       <div
         className={`overlay-element overlay-image ${isSelected ? "selected" : ""}`}
@@ -243,7 +244,7 @@ function OverlayElement({
         <img
           src={overlay.imageData}
           alt={overlay.fileName || "Image"}
-          style={{ width: `${widthPx}px`, height: "auto" }}
+          style={{ width: `${widthPx}px`, height: `${heightPx}px` }}
         />
       </div>
     );
