@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from "react";
+import { PDFDocument } from "pdf-lib";
 import PDFUploader from "./components/PDFUploader";
 import PDFViewer from "./components/PDFViewer";
 import Sidebar from "./components/Sidebar";
@@ -22,7 +23,6 @@ export default function App() {
   const [passwordInput, setPasswordInput] = useState("");
 
   const loadPdfWithPassword = useCallback(async (file, arrayBuffer, password) => {
-    const { PDFDocument } = await import("pdf-lib");
     const loadOptions = password ? { password } : {};
     const doc = await PDFDocument.load(arrayBuffer, loadOptions);
     const pages = doc.getPages();
