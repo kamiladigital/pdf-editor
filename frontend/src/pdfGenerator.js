@@ -46,8 +46,9 @@ async function normalizeImageToPng(dataUrl) {
  * @param {Array} overlays - Array of overlay objects (type: "text" | "image")
  * @returns {Promise<Uint8Array>} - The modified PDF bytes
  */
-export async function generatePDF(pdfBytes, overlays) {
-  const pdfDoc = await PDFDocument.load(pdfBytes);
+export async function generatePDF(pdfBytes, overlays, password) {
+  const loadOptions = password ? { password } : {};
+  const pdfDoc = await PDFDocument.load(pdfBytes, loadOptions);
   const pages = pdfDoc.getPages();
   const helveticaFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
 

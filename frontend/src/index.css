@@ -72,6 +72,64 @@ body {
   display: none;
 }
 
+/* Password Dialog */
+.password-dialog {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.password-dialog-inner {
+  background: white;
+  border-radius: 12px;
+  padding: 32px;
+  max-width: 400px;
+  width: 90%;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+}
+
+.password-dialog-inner h3 {
+  font-size: 20px;
+  margin-bottom: 8px;
+}
+
+.password-dialog-inner p {
+  color: #666;
+  font-size: 14px;
+  margin-bottom: 16px;
+}
+
+.password-dialog-inner input[type="password"] {
+  width: 100%;
+  padding: 10px 14px;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  font-size: 15px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.password-dialog-inner input[type="password"]:focus {
+  border-color: #4a90d9;
+}
+
+.password-dialog-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.password-dialog-actions .btn {
+  flex: 1;
+}
+
 /* Editor Layout */
 .editor-layout {
   display: flex;

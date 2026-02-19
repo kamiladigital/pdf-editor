@@ -18,6 +18,7 @@ export default function PDFViewer({
   onMoveOverlay,
   onDeleteOverlay,
   activeTool,
+  password,
 }) {
   const canvasRef = useRef(null);
   const containerRef = useRef(null);
@@ -31,11 +32,14 @@ export default function PDFViewer({
   useEffect(() => {
     if (!file) return;
     const url = URL.createObjectURL(file);
-    pdfjsLib.getDocument(url).promise.then((doc) => {
+    const loadingTask = pdfjsLib.getDocument({ url, password: password || undefined });
+    loadingTask.promise.then((doc) => {
       setPdfDoc(doc);
+    }).catch((err) => {
+      console.warn("PDF.js load error:", err);
     });
     return () => URL.revokeObjectURL(url);
-  }, [file]);
+  }, [file, password]);
 
   // Render current page
   useEffect(() => {

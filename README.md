@@ -1,6 +1,6 @@
 # PDF Editor
 
-A web application for editing PDFs — upload a PDF, add text and images anywhere on the page, then generate and download a new PDF with those edits baked in. **All PDF processing happens client-side in the browser** using [pdf-lib](https://pdf-lib.js.org/) — no backend required.
+A web application for editing PDFs — upload a PDF, add text and images anywhere on the page, then generate and download a new PDF with those edits baked in. Supports **password-protected PDFs**. **All PDF processing happens client-side in the browser** using [pdf-lib](https://pdf-lib.js.org/) — no backend required.
 
 ## How It Works
 
@@ -10,6 +10,8 @@ A web application for editing PDFs — upload a PDF, add text and images anywher
 [User opens the app in the browser]
          ↓
 [User uploads a PDF file (stays in browser, never leaves the machine)]
+         ↓
+[If encrypted → password dialog appears → user enters password → PDF is decrypted]
          ↓
 [PDF.js renders each page onto an HTML canvas]
          ↓
