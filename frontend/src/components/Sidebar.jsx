@@ -202,14 +202,14 @@ export default function Sidebar({
           <button
             className="btn btn-primary"
             onClick={onProcess}
-            disabled={processing || overlays.length === 0}
+            disabled={processing}
           >
             {processing ? (
               <>
                 <span className="spinner"></span> Processing...
               </>
             ) : (
-              "📥 Generate PDF"
+              overlays.length === 0 ? "📥 Copy PDF" : "📥 Generate PDF"
             )}
           </button>
 
