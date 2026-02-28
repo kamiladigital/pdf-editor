@@ -74,9 +74,12 @@ func main() {
 	}
 
 	// Start server
-	port := ":8080"
-	log.Printf("Starting PDF decryption server on port %s", port)
-	log.Fatal(http.ListenAndServe(port, corsMiddleware(r)))
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+	log.Printf("Starting PDF decryption server on :%s", port)
+	log.Fatal(http.ListenAndServe(":"+port, corsMiddleware(r)))
 }
 
 func healthHandler(w http.ResponseWriter, r *http.Request) {

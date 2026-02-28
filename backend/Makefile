@@ -1,31 +1,99 @@
-.PHONY: run build clean
+.PHONY: build run docker-build docker-run docker-clean test
 
-run:
-	@echo "Starting PDF decryption backend server..."
-	@go run cmd/server/main.go
+# Go build variables
+BINARY_NAME=pdf-decrypt-server
+GO_BUILD_FLAGS=-ldflags="-w -s"
 
+# Docker variables
+DOCKER_IMAGE_NAME=pdf-decrypt-server
+DOCKER_CONTAINER_NAME=pdf-decrypt-server
+
+# Build the Go binary
 build:
-	@echo "Building PDF decryption backend..."
-	@go build -o bin/pdf-decrypt-server cmd/server/main.go
+	@echo "Building Go binary..."
+	go build $(GO_BUILD_FLAGS) -o bin/$(BINARY_NAME) ./cmd/server
 
-clean:
-	@echo "Cleaning up..."
-	@rm -rf bin/ uploads/ outputs/
+# Run the Go binary locally
+run: build
+	@echo "Starting server..."
+	./bin/$(BINARY_NAME)
 
-install-deps:
-	@echo "Installing dependencies..."
-	@go mod download
-
-test:
-	@echo "Running tests..."
-	@go test ./...
-
+# Run in development mode with hot reload (requires air)
 dev:
-	@echo "Starting development server with air..."
 	@if command -v air > /dev/null; then \
 		air; \
 	else \
-		echo "Air not installed. Installing..."; \
+		echo "Installing air for hot reload..."; \
 		go install github.com/cosmtrek/air@latest; \
 		air; \
 	fi
+
+# Build Docker image
+docker-build:
+	@echo "Building Docker image..."
+	docker build -t $(DOCKER_IMAGE_NAME) .
+
+# Run Docker container
+docker-run: docker-build
+	@echo "Starting Docker container..."
+	docker run -d \
+		--name $(DOCKER_CONTAINER_NAME) \
+		-p 8080:8080 \
+		-v pdf-uploads:/app/uploads \
+		-v pdf-outputs:/app/outputs \
+		$(DOCKER_IMAGE_NAME)
+
+# Run Docker container with docker-compose
+docker-compose-up:
+	@echo "Starting services with docker-compose..."
+	docker-compose up -d
+
+# Stop Docker container
+docker-stop:
+	@echo "Stopping Docker container..."
+	-docker stop $(DOCKER_CONTAINER_NAME)
+	-docker rm $(DOCKER_CONTAINER_NAME)
+
+# Stop docker-compose services
+docker-compose-down:
+	@echo "Stopping docker-compose services..."
+	docker-compose down
+
+# Clean Docker resources
+docker-clean: docker-stop docker-compose-down
+	@echo "Cleaning Docker volumes..."
+	-docker volume rm pdf-uploads pdf-outputs
+
+# Run tests
+test:
+	@echo "Running tests..."
+	go test ./...
+
+# Clean build artifacts
+clean:
+	@echo "Cleaning build artifacts..."
+	rm -rf bin/
+	rm -rf uploads/
+	rm -rf outputs/
+
+# Install dependencies
+deps:
+	@echo "Installing dependencies..."
+	go mod download
+
+# Show help
+help:
+	@echo "Available targets:"
+	@echo "  build           - Build Go binary"
+	@echo "  run             - Build and run locally"
+	@echo "  dev             - Run with hot reload (requires air)"
+	@echo "  docker-build    - Build Docker image"
+	@echo "  docker-run      - Build and run Docker container"
+	@echo "  docker-compose-up - Start services with docker-compose"
+	@echo "  docker-stop     - Stop Docker container"
+	@echo "  docker-compose-down - Stop docker-compose services"
+	@echo "  docker-clean    - Clean all Docker resources"
+	@echo "  test           - Run tests"
+	@echo "  clean          - Clean build artifacts"
+	@echo "  deps           - Install dependencies"
+	@echo "  help           - Show this help"
