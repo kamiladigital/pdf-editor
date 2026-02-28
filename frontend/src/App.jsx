@@ -209,14 +209,25 @@ export default function App() {
       const resultBytes = await generatePDF(pdfBytes, overlays, pdfPassword);
       const blob = new Blob([resultBytes], { type: "application/pdf" });
       const url = URL.createObjectURL(blob);
-      setDownloadUrl(url);
-      setStatus({ type: "success", message: overlays.length === 0 ? "PDF copied successfully!" : "PDF generated successfully!" });
+      
+      // Create a temporary anchor element to trigger download
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = pdfFile ? `edited_${pdfFile.name}` : 'document.pdf';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      
+      // Clean up after a short delay
+      setTimeout(() => URL.revokeObjectURL(url), 100);
+      
+      setStatus({ type: "success", message: "PDF downloaded successfully!" });
     } catch (err) {
       setStatus({ type: "error", message: `Generation failed: ${err.message}` });
     } finally {
       setProcessing(false);
     }
-  }, [pdfBytes, overlays, downloadUrl, pdfPassword]);
+  }, [pdfBytes, overlays, downloadUrl, pdfPassword, pdfFile]);
 
   const handleReset = useCallback(() => {
     if (downloadUrl) URL.revokeObjectURL(downloadUrl);

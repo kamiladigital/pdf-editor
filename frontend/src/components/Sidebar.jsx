@@ -209,17 +209,9 @@ export default function Sidebar({
                 <span className="spinner"></span> Processing...
               </>
             ) : (
-              overlays.length === 0 ? "📥 Copy PDF" : "📥 Generate PDF"
+              "⬇️ DOWNLOAD"
             )}
           </button>
-
-          {downloadUrl && (
-            <div className="download-section">
-              <a href={downloadUrl} download>
-                ⬇️ Download Edited PDF
-              </a>
-            </div>
-          )}
 
           <button className="btn" onClick={onReset}>
             🔄 Upload New PDF
