@@ -4,6 +4,10 @@ import PDFUploader from "./components/PDFUploader";
 import PDFViewer from "./components/PDFViewer";
 import Sidebar from "./components/Sidebar";
 import { generatePDF } from "./pdfGenerator";
+import { v4 as uuidv4 } from "uuid";
+
+// Backend API URL - can be configured via environment variable
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8080";
 
 export default function App() {
   const [pdfFile, setPdfFile] = useState(null);
@@ -77,11 +81,42 @@ export default function App() {
 
   const handlePasswordSubmit = useCallback(async () => {
     if (!pendingFile || !pendingBytes) return;
-    setStatus({ type: "info", message: "Unlocking PDF..." });
+    setStatus({ type: "info", message: "Decrypting PDF via backend..." });
+    
     try {
-      await loadPdfWithPassword(pendingFile, pendingBytes, passwordInput);
+      // Create FormData for file upload
+      const formData = new FormData();
+      formData.append("pdf", pendingFile);
+      formData.append("password", passwordInput);
+
+      // Send to backend for decryption
+      const response = await fetch(`${BACKEND_URL}/api/pdf/decrypt`, {
+        method: "POST",
+        body: formData,
+      });
+
+      const result = await response.json();
+      
+      if (!result.success) {
+        setStatus({ type: "error", message: `Decryption failed: ${result.error || result.message}` });
+        return;
+      }
+
+      // Download the decrypted PDF from backend
+      const decryptedResponse = await fetch(`${BACKEND_URL}${result.file_url}`);
+      const decryptedBlob = await decryptedResponse.blob();
+      const decryptedArrayBuffer = await decryptedBlob.arrayBuffer();
+      
+      // Create a new File object from the decrypted PDF
+      const decryptedFile = new File([decryptedBlob], `decrypted_${pendingFile.name}`, {
+        type: "application/pdf",
+      });
+
+      // Load the decrypted PDF
+      await loadPdfWithPassword(decryptedFile, decryptedArrayBuffer, passwordInput);
+      
     } catch (err) {
-      setStatus({ type: "error", message: "Wrong password or unable to decrypt this PDF." });
+      setStatus({ type: "error", message: `Decryption failed: ${err.message}` });
     }
   }, [pendingFile, pendingBytes, passwordInput, loadPdfWithPassword]);
 
@@ -157,8 +192,8 @@ export default function App() {
   }, []);
 
   const handleProcess = useCallback(async () => {
-    if (!pdfBytes || overlays.length === 0) {
-      setStatus({ type: "error", message: "Add some text or images before generating" });
+    if (!pdfBytes) {
+      setStatus({ type: "error", message: "No PDF loaded" });
       return;
     }
 
@@ -175,14 +210,31 @@ export default function App() {
       const resultBytes = await generatePDF(pdfBytes, overlays, pdfPassword);
       const blob = new Blob([resultBytes], { type: "application/pdf" });
       const url = URL.createObjectURL(blob);
-      setDownloadUrl(url);
-      setStatus({ type: "success", message: "PDF generated successfully!" });
+      
+      // Create a temporary anchor element to trigger download
+      const a = document.createElement('a');
+      a.href = url;
+      
+      // Generate filename with UUID for uniqueness
+      const uuid = uuidv4();
+      const originalName = pdfFile ? pdfFile.name.replace(/\.[^/.]+$/, "") : "document";
+      const extension = pdfFile ? pdfFile.name.split('.').pop() : "pdf";
+      a.download = `${originalName}_${uuid}.${extension}`;
+      
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      
+      // Clean up after a short delay
+      setTimeout(() => URL.revokeObjectURL(url), 100);
+      
+      setStatus({ type: "success", message: "PDF downloaded successfully!" });
     } catch (err) {
       setStatus({ type: "error", message: `Generation failed: ${err.message}` });
     } finally {
       setProcessing(false);
     }
-  }, [pdfBytes, overlays, downloadUrl, pdfPassword]);
+  }, [pdfBytes, overlays, downloadUrl, pdfPassword, pdfFile]);
 
   const handleReset = useCallback(() => {
     if (downloadUrl) URL.revokeObjectURL(downloadUrl);
@@ -206,8 +258,8 @@ export default function App() {
   return (
     <div className="app">
       <header className="app-header">
-        <h1>PDF Editor</h1>
-        <p>Upload a PDF, add text and images, then download the result</p>
+        <h1>PDF Editor & Decryptor</h1>
+        <p>Edit PDFs with text/images or decrypt password-protected files</p>
       </header>
 
       {status && (

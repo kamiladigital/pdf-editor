@@ -202,24 +202,16 @@ export default function Sidebar({
           <button
             className="btn btn-primary"
             onClick={onProcess}
-            disabled={processing || overlays.length === 0}
+            disabled={processing}
           >
             {processing ? (
               <>
                 <span className="spinner"></span> Processing...
               </>
             ) : (
-              "📥 Generate PDF"
+              "⬇️ DOWNLOAD"
             )}
           </button>
-
-          {downloadUrl && (
-            <div className="download-section">
-              <a href={downloadUrl} download>
-                ⬇️ Download Edited PDF
-              </a>
-            </div>
-          )}
 
           <button className="btn" onClick={onReset}>
             🔄 Upload New PDF
