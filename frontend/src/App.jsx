@@ -4,6 +4,7 @@ import PDFUploader from "./components/PDFUploader";
 import PDFViewer from "./components/PDFViewer";
 import Sidebar from "./components/Sidebar";
 import { generatePDF } from "./pdfGenerator";
+import { v4 as uuidv4 } from "uuid";
 
 // Backend API URL - can be configured via environment variable
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8080";
@@ -213,7 +214,13 @@ export default function App() {
       // Create a temporary anchor element to trigger download
       const a = document.createElement('a');
       a.href = url;
-      a.download = pdfFile ? `edited_${pdfFile.name}` : 'document.pdf';
+      
+      // Generate filename with UUID for uniqueness
+      const uuid = uuidv4();
+      const originalName = pdfFile ? pdfFile.name.replace(/\.[^/.]+$/, "") : "document";
+      const extension = pdfFile ? pdfFile.name.split('.').pop() : "pdf";
+      a.download = `${originalName}_${uuid}.${extension}`;
+      
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
