@@ -50,10 +50,10 @@ func main() {
 
 	// Health check endpoint
 	r.HandleFunc("/api/health", healthHandler).Methods("GET")
-	
+
 	// PDF decryption endpoint
 	r.HandleFunc("/api/pdf/decrypt", decryptPDFHandler).Methods("POST")
-	
+
 	// Serve static files (for decrypted PDFs)
 	r.PathPrefix("/outputs/").Handler(http.StripPrefix("/outputs/", http.FileServer(http.Dir(outputPath))))
 
@@ -63,12 +63,12 @@ func main() {
 			w.Header().Set("Access-Control-Allow-Origin", "*")
 			w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
 			w.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
-			
+
 			if r.Method == "OPTIONS" {
 				w.WriteHeader(http.StatusOK)
 				return
 			}
-			
+
 			next.ServeHTTP(w, r)
 		})
 	}
@@ -156,7 +156,7 @@ func decryptPDFHandler(w http.ResponseWriter, r *http.Request) {
 	// Create a configuration with the password
 	config := model.NewDefaultConfiguration()
 	config.UserPW = password
-	
+
 	// Try to decrypt
 	err = api.DecryptFile(inputPath, outputPath, config)
 	if err != nil {
